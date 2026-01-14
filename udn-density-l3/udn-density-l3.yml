@@ -1,0 +1,58 @@
+---
+global:
+  measurements:
+    - name: podLatency
+    - name: pprof
+      pprofInterval: 2m
+      pprofDirectory: pprof-data
+      pprofTargets:
+      - name: ovnkube-controller
+        namespace: "openshift-ovn-kubernetes"
+        labelSelector: {app: ovnkube-node}
+        url: http://localhost:29103/debug/pprof/profile?seconds=30
+      - name: ovnk-control-plane
+        namespace: "openshift-ovn-kubernetes"
+        labelSelector: {app: ovnkube-control-plane}
+        url: http://localhost:29108/debug/pprof/profile?seconds=30
+
+
+jobs:
+  - name: udn-density-l3-pods
+    namespace: udn-density-l3-pods
+    jobIterations: 50
+    qps: 20
+    burst: 20
+    namespacedIterations: true
+    podWait: false
+    waitWhenFinished: true
+    preLoadImages: false
+    preLoadPeriod: 15s
+    jobPause: 5m
+    namespaceLabels:
+      pod-security.kubernetes.io/enforce: privileged
+      pod-security.kubernetes.io/audit: privileged
+      pod-security.kubernetes.io/warn: privileged
+      k8s.ovn.org/primary-user-defined-network: ""
+    objects:
+
+      - objectTemplate: templates/udn_l3.yml
+        replicas: 1
+
+      - objectTemplate: templates/np-deny-all.yml
+        replicas: 1
+
+      - objectTemplate: templates/np-allow-from-clients.yml
+        replicas: 1
+
+      - objectTemplate: templates/service.yml
+        replicas: 5
+
+      - objectTemplate: templates/deployment-server.yml
+        replicas: 3
+        inputVars:
+          podReplicas: 2
+
+      - objectTemplate: templates/deployment-client.yml
+        replicas: 2
+        inputVars:
+          podReplicas: 2

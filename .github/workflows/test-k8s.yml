@@ -61,8 +61,7 @@ jobs:
 
     - name: Execute Tests
       run: |
-        chmod +x /tmp/kube-burner
-        make test-k8s
+        make test
       env:
         TERM: linux
         GH_TOKEN: ${{ github.token }}
